@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.DoctorDao">
+
+    <resultMap id="medicinal" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="shellPrice" property="shellPrice"></result>
+        <result column="endTime" property="endTime"></result>
+        <result column="maxEndTime" property="maxEndTime"></result>
+        <result column="totalCount" property="totalCount"></result>
+    </resultMap>
+
+    <!--查询最早过期的-->
+    <select id="selectMedByName" resultMap="medicinal">
+        SELECT mid,name,shellPrice,totalCount,endTime FROM medicinal where isSoldOut = 0 AND name = #{name} and endTime =
+        (select min(endTime) from medicinal where isSoldOut = 0 AND name = #{name})
+    </select>
+
+    <insert id="insertPrescriptInfo">
+        INSERT INTO prescriptinfo VALUES (#{pid},#{mid},#{mnum},#{mprice},#{total})
+    </insert>
+
+    <insert id="insertPrescript">
+        INSERT INTO prescript VALUES (#{pid},0,0,0,#{totalPrice},#{typeId},#{createTime},null,null)
+    </insert>
+
+    <update id="disMed">
+        UPDATE medicinal SET totalCount=totalCount-#{num} WHERE name=#{name} AND endTime=#{endTime}
+    </update>
+
+    <select id="selectCountByMedName" resultType="java.lang.Integer">
+        SELECT sum(totalCount) FROM medicinal
+        WHERE isSoldOut = 0 AND name = #{name} GROUP BY name;
+    </select>
+
+    <select id="selectLateMed" resultType="java.lang.String">
+        select max(endTime) from medicinal where isSoldOut = 0 AND name = #{name}
+    </select>
+</mapper>

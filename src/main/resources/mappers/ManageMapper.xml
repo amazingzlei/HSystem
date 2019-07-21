@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.ManageDao">
+    <select id="isHasSupervisor" resultType="java.lang.String">
+        SELECT  wid FROM employee WHERE type = 2
+    </select>
+
+    <select id="isHasPurchase" resultType="java.lang.String">
+        SELECT  wid FROM employee WHERE type = 3
+    </select>
+
+    <select id="isHasDirector" resultType="java.lang.String">
+        SELECT  wid FROM employee WHERE type = 5 AND departID = #{type}
+    </select>
+
+    <select id="getEmployeeByDepartId" resultType="cn.xzit.entity.base.Employee">
+        SELECT * FROM employee WHERE departId = #{id}
+    </select>
+</mapper>

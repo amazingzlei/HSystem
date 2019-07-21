@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.DirectorDao">
+
+    <resultMap id="medicinal" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="endTime" property="endTime"></result>
+        <result column="productTime" property="productTime"></result>
+        <result column="totalCount" property="totalCount"></result>
+    </resultMap>
+
+    <resultMap id="purchaseInfo" type="cn.xzit.entity.base.PurchaseInfo">
+        <result column="pid" property="pid"></result>
+        <result column="mid" property="mid"></result>
+        <result column="wid" property="wid"></result>
+        <result column="mnum" property="mnum"></result>
+        <result column="newMedName" property="newMedName"></result>
+        <result column="isPut" property="isPut"></result>
+    </resultMap>
+
+    <resultMap id="purchase" type="cn.xzit.entity.base.Purchase">
+        <result column="pid" property="pid"></result>
+        <result column="wId" property="wId"></result>
+        <result column="isPut" property="isPut"></result>
+        <result column="isAccess" property="isAccess"></result>
+        <result column="accessor" property="assessor"></result>
+        <result column="applicant" property="applicant"></result>
+        <result column="status" property="status"></result>
+        <result column="createTime" property="createTime"></result>
+    </resultMap>
+
+    <resultMap id="medicinalInfo" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="counterId" property="counterId"></result>
+        <result column="counterLeft" property="counterLeft"></result>
+        <result column="repertoryLeft" property="repertoryLeft"></result>
+        <result column="repertoryId" property="repertoryId"></result>
+        <result column="endTime" property="endTime"></result>
+        <result column="productTime" property="productTime"></result>
+    </resultMap>
+
+    <resultMap id="Prescript" type="cn.xzit.entity.base.Prescript">
+        <result column="pid" property="pid"></result>
+        <result column="isCharge" property="isCharge"></result>
+        <result column="isShell" property="isShell"></result>
+        <result column="isCancel" property="isCancel"></result>
+        <result column="totalprice" property="totalPrice"></result>
+        <result column="typeId" property="typeId"></result>
+        <result column="create_time" property="createTime"></result>
+        <result column="charge_time" property="chargeTime"></result>
+        <result column="shell_time" property="shellTime"></result>
+    </resultMap>
+
+    <select id="getExpireMed" resultMap="medicinal">
+        SELECT mid,name,endTime,productTime,totalCount FROM medicinal where (
+          SELECT TIMESTAMPDIFF(DAY,#{endTime},endTime)) &lt;50 AND isSoldOut = 0
+          limit #{current},#{limit}
+    </select>
+
+    <select id="getCountOfExpiredMed" resultType="java.lang.Integer">
+        SELECT count(1) FROM medicinal where (
+          SELECT TIMESTAMPDIFF(DAY,#{endTime},endTime)) &lt;50 AND isSoldOut = 0
+    </select>
+
+    <select id="getCountOfBlowCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM medicinal where totalCount &lt;25 AND isSoldOut = 0
+    </select>
+
+    <select id="getBlowCount" resultMap="medicinal">
+        SELECT mid,name,endTime,productTime,totalCount FROM medicinal where totalCount &lt;25 AND isSoldOut = 0 limit #{current},#{limit}
+    </select>
+
+    <insert id="addPurchase">
+        INSERT INTO purchaseinfo(pid,mid,wid,newMedName,mnum,isPut) VALUES ("",#{mid},#{wid},#{medName},#{medNum},0)
+    </insert>
+
+    <select id="getMedByName" resultType="java.lang.String">
+        SELECT DISTINCT mid FROM medicinal WHERE isSoldOut = 0 and name = #{name}
+    </select>
+
+    <select id="getPurchaseInfoByMid" resultMap="purchaseInfo">
+        SELECT * FROM purchaseinfo WHERE mid=#{mid} AND isPut=0 AND pid=''
+    </select>
+
+    <select id="getPurchaseInfoByName" resultMap="purchaseInfo">
+        SELECT * FROM purchaseinfo WHERE newMedName=#{name} AND isPut=0 AND pid=''
+    </select>
+
+    <update id="updatePurchaseInfo">
+        UPDATE purchaseinfo SET mnum = mnum+#{medNum} WHERE
+         <trim prefixOverrides="and">
+             <if test="mid != null">
+                 AND mid=#{mid}
+             </if>
+             <if test="medName != null">
+                 AND newMedName=#{medName}
+             </if>
+         </trim>
+         AND isPut=0 AND pid='' AND wid=#{wid}
+    </update>
+
+    <select id="getAllApplication" resultMap="purchase">
+        SELECT a.pid,if(a.wId!=null or a.wId!='',(select name from employee where wid=a.wId),'未采购')as wId,a.isPut,a.isAccess,
+        if(a.accessor!=null or a.accessor!='',(select name from employee where wid=a.accessor),'未审核') as accessor,a.status,a.createTime
+        FROM (SELECT pid,wId,CASE isPut WHEN 0 THEN '未入库'
+        ELSE '已入库' END as isPut,accessor,CASE status WHEN 0 THEN '待审核'  WHEN 1 THEN '已审核' WHEN 2 THEN '驳回'
+        ELSE '已采购' END as status,createTime,isAccess FROM purchase where applicant=#{wid} ORDER by createTime DESC )a limit #{current},#{limit}
+    </select>
+
+    <select id="getAllApplicationCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM purchase where applicant=#{wid}
+    </select>
+
+    <select id="getAllApplicating" resultMap="purchaseInfo">
+        SELECT a.newMedName,a.mnum,if(mid!=null OR mid!='',(SELECT DISTINCT name FROM medicinal WHERE mid=a.mid),null)as mid
+        FROM
+        (SELECT mid,newMedName,mnum FROM purchaseinfo WHERE pid='' AND wid=#{wid})a
+    </select>
+
+    <select id="getCountOfMed" resultType="cn.xzit.entity.base.Count">
+        select DISTINCT name,b.count as count from medicinal m LEFT JOIN (select mid,sum(mnum) as count from prescriptinfo p LEFT JOIN
+        (select pid from prescript where typeId=#{typeId} and isCharge=1 and isShell = 1 and isCancel = 0 and (select TIMESTAMPDIFF(Month,shell_time,'2019-03-30 13:48:16')) &lt;3 )a on p.pid=a.pid where p.pid=a.pid GROUP BY mid)b
+        on b.mid = m.mid where m.mid = b.mid
+    </select>
+
+    <select id="getExpireMedInfo" resultMap="medicinalInfo">
+        SELECT c.position as counterId,r.position as repertoryId,a.mid,a.name,a.endTime,a.productTime,a.counterLeft,a.repertoryLeft
+        FROM counter c
+        LEFT JOIN (SELECT mid,name,endTime,productTime,counterLeft,counterId,repertoryId,repertoryLeft FROM medicinal where (
+        SELECT TIMESTAMPDIFF(DAY,#{endTime},endTime)) &lt;50 AND isSoldOut = 0)a on c.cid=a.counterId
+        LEFT JOIN repertory r on a.repertoryId=r.rid where c.cid=a.counterId and a.repertoryId=r.rid
+        limit #{current},#{limit}
+    </select>
+
+    <select id="getExpiredMedInfoCount" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM counter c
+        LEFT JOIN (SELECT mid,name,endTime,productTime,counterLeft,counterId,repertoryId,repertoryLeft FROM medicinal where (
+        SELECT TIMESTAMPDIFF(DAY,#{endTime},endTime)) &lt;50 AND isSoldOut = 0)a on c.cid=a.counterId
+        LEFT JOIN repertory r on a.repertoryId=r.rid where c.cid=a.counterId and a.repertoryId=r.rid
+    </select>
+
+    <select id="getHosAdminId" resultType="java.lang.String">
+        SELECT wid FROM employee WHERE type = 2
+    </select>
+
+    <select id="getPurchaseId" resultType="java.lang.String">
+        SELECT wid FROM employee WHERE type = 3
+    </select>
+
+    <select id="getMedByMid" resultMap="medicinal">
+        SELECT mid,name,endTime,productTime,totalCount FROM medicinal WHERE mid=#{mid} and isSoldOut = 0
+    </select>
+
+    <select id="getPharmacyIds" resultType="java.lang.String">
+        SELECT wid FROM employee WHERE type=4
+    </select>
+
+    <select id="getPrescriptByMid" resultMap="Prescript">
+        SELECT * FROM prescript where pid in (SELECT pid from prescriptinfo where mid = #{mid}) and isShell = 0
+    </select>
+</mapper>

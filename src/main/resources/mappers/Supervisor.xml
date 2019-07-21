@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.SupervisorDao">
+
+    <resultMap id="purchase" type="cn.xzit.entity.base.Purchase">
+        <result column="pid" property="pid"></result>
+        <result column="wId" property="wId"></result>
+        <result column="isPut" property="isPut"></result>
+        <result column="isAccess" property="isAccess"></result>
+        <result column="accessor" property="assessor"></result>
+        <result column="applicant" property="applicant"></result>
+        <result column="applicantName" property="applicantName"></result>
+        <result column="status" property="status"></result>
+        <result column="createTime" property="createTime"></result>
+    </resultMap>
+
+    <select id="getReqApplicatePur" resultMap="purchase">
+        SELECT pid,wId,isPut,isAccess,accessor,applicant,(SELECT name FROM employee where wid = applicant ) as applicantName,
+        status,createTime FROM purchase WHERE isAccess = 0 order by createTime desc limit #{current},#{limit}
+    </select>
+
+    <select id="getReqApplicatePurCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM purchase WHERE isAccess = 0
+    </select>
+</mapper>

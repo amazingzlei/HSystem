@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.ChargeDao">
+    <resultMap id="prescript" type="cn.xzit.entity.base.Prescript">
+        <result column="pid" property="pid"></result>
+        <result column="isCharge" property="isCharge"></result>
+        <result column="totalprice" property="totalPrice"></result>
+        <result column="create_time" property="createTime"></result>
+    </resultMap>
+    <select id="selectPrescriptByPid" resultMap="prescript">
+        SELECT pid,isCharge,totalprice,create_time FROM prescript WHERE pid=#{pid}
+    </select>
+</mapper>

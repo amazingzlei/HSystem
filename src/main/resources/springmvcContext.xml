@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:component-scan base-package="cn.xzit.controller"/>
+
+    <mvc:annotation-driven>
+        <mvc:message-converters register-defaults="true">
+            <bean id="stringHttpMessageConverter" class="org.springframework.http.converter.StringHttpMessageConverter">
+                <property name="supportedMediaTypes"  value="application/json;charset=UTF-8"/>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="0">
+    </bean>
+    <!-- Excel 处理 根据用户输入进行对象处理 -->
+    <bean id="jeecgExcelView" class="org.jeecgframework.poi.excel.view.JeecgSingleExcelView" />
+    <bean id="jeecgTemplateExcelView" class="org.jeecgframework.poi.excel.view.JeecgTemplateExcelView" />
+    <bean id="jeecgTemplateWordView" class="org.jeecgframework.poi.excel.view.JeecgTemplateWordView" />
+    <bean id="jeecgMapExcelView" class="org.jeecgframework.poi.excel.view.JeecgMapExcelView" />
+    <!--<bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver">-->
+        <!--<property name="defaultEncoding" value="UTF-8"></property>-->
+        <!--<property name="maxUploadSize" value="10000000"/>-->
+    <!--</bean>-->
+
+
+
+    <!--你妈的，不是说只拦截controller请求吗，为什么连我的静态资源也拦截了-->
+    <!--解决方法：-->
+            <!--1.下面，&lt;!&ndash;<mvc:exclude-mapping path="/images/*"/>&ndash;&gt;-->
+            <!--实际上没有使用1，是用2在web.xml中配置好静态资源的处理，没进入dispa。。中，进入的话拦截器会发疯的，乱拦截，草-->
+            <!--2.配置default（涉及web.xml）-->
+            <!--3.修改Spring的全局拦截设置为*.do的拦截（涉及web.xml）-->
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/userLogin/isLoginSuccess"/>
+            <mvc:exclude-mapping path="/userLogin/login"/>
+            <mvc:exclude-mapping path="/manageEmployeeInfo/getAllType"/>
+            <!--<mvc:exclude-mapping path="/images/*"/>-->
+            <bean class="cn.xzit.interceptor.LoginInterceptor"></bean>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+
+    <mvc:default-servlet-handler/>
+</beans>

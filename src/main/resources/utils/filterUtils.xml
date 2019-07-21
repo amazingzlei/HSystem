@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Mapper>
+    <mapper type="0" url="/manage/" def="管理员"/>
+    <mapper type="1" url="/doctor/" def="医生"/>
+    <mapper type="2" url="/supervisor/" def="医院主管"/>
+    <mapper type="3" url="/purshase/" def="采购人员"/>
+    <mapper type="4" url="/pharmacy/" def="药房出药人员"/>
+    <mapper type="5" url="/director/" def="科室主任"/>
+    <mapper type="6" url="/charge/" def="药房收费人员"/>
+</Mapper>

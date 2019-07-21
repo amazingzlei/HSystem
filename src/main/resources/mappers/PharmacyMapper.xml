@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.PharmacyDao">
+
+    <resultMap id="Prescript" type="cn.xzit.entity.base.Prescript">
+        <result column="pid" property="pid"></result>
+        <result column="isCharge" property="isCharge"></result>
+        <result column="isShell" property="isShell"></result>
+        <result column="isCancel" property="isCancel"></result>
+        <result column="totalprice" property="totalPrice"></result>
+        <result column="typeId" property="typeId"></result>
+        <result column="create_time" property="createTime"></result>
+        <result column="charge_time" property="chargeTime"></result>
+        <result column="shell_time" property="shellTime"></result>
+    </resultMap>
+
+    <resultMap id="prescriptInfo" type="cn.xzit.entity.base.PrescriptInfo">
+        <result column="pid" property="pid"></result>
+        <result column="mid" property="mid"></result>
+        <result column="mnum" property="mnum"></result>
+    </resultMap>
+
+    <resultMap id="medicinal" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="productTime" property="productTime"></result>
+        <result column="endTime" property="endTime"></result>
+        <result column="counterId" property="counterId"></result>
+        <result column="counterLeft" property="counterLeft"></result>
+        <result column="repertoryId" property="repertoryId"></result>
+        <result column="repertoryLeft" property="repertoryLeft"></result>
+        <result column="counter" property="totalCount"></result>
+    </resultMap>
+
+    <resultMap id="drawMed" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="counterId" property="counterId"></result>
+        <result column="counterLeft" property="counterLeft"></result>
+        <result column="repertoryId" property="repertoryId"></result>
+        <result column="repertoryLeft" property="repertoryLeft"></result>
+        <result column="productTime" property="productTime"></result>
+    </resultMap>
+
+    <resultMap id="counter" type="cn.xzit.entity.base.Counter">
+        <result column="cid" property="cid"></result>
+        <result column="position" property="position"></result>
+        <result column="isUse" property="isUse"></result>
+    </resultMap>
+
+    <select id="getPrescriptInfo" resultMap="Prescript">
+        SELECT * FROM prescript WHERE pid=#{pid} AND isCancel = 0
+    </select>
+
+    <select id="gerPrescriptDetail" resultMap="prescriptInfo">
+        SELECT p1.mid,p1.pid,p1.mnum FROM prescriptinfo p1,prescript p2 WHERE p1.pid = p2.pid and p1.pid = #{pid}
+    </select>
+
+    <select id="getEarlyMed" resultMap="medicinal">
+        SELECT mid,name,productTime,endTime as endTime,counterId,counterLeft,repertoryId,repertoryLeft
+        FROM medicinal where endTime=(SELECT MIN(endTime) as endTime FROM medicinal where mid=#{mid} and isSoldOut =0
+        and (counterLeft>0 or repertoryLeft>0) GROUP BY mid ) and
+        mid=#{mid} and isSoldOut =0 and (counterLeft>0 or repertoryLeft>0)
+    </select>
+
+    <select id="getLateMed" resultMap="medicinal">
+        SELECT mid,name,productTime,endTime as endTime,counterId,counterLeft,repertoryId,repertoryLeft
+        FROM medicinal where endTime=(SELECT max(endTime) as endTime FROM medicinal where mid=#{mid} and isSoldOut =0 and (counterLeft>0 or repertoryLeft>0) GROUP BY mid ) and
+        mid=#{mid} and isSoldOut =0 and (counterLeft>0 or repertoryLeft>0)
+    </select>
+
+    <select id="getDrawEarlyMed" resultMap="medicinal">
+        SELECT mid,name,productTime,endTime as endTime,counterId,counterLeft,repertoryId,repertoryLeft
+        FROM medicinal where endTime=(SELECT MIN(endTime) as endTime FROM medicinal where mid=#{mid}
+        and (counterLeft>0 or repertoryLeft>0) GROUP BY mid ) and
+        mid=#{mid} and (counterLeft>0 or repertoryLeft>0)
+    </select>
+
+    <select id="getDrawLateMed" resultMap="medicinal">
+        SELECT mid,name,productTime,endTime as endTime,counterId,counterLeft,repertoryId,repertoryLeft
+        FROM medicinal where endTime=(SELECT max(endTime) as endTime FROM medicinal where mid=#{mid} and (counterLeft>0 or repertoryLeft>0) GROUP BY mid ) and
+        mid=#{mid} and (counterLeft>0 or repertoryLeft>0)
+    </select>
+
+    <select id="isShellOut" resultType="java.lang.String">
+        SELECT isShell FROM prescript WHERE pid = #{pid}
+    </select>
+
+    <select id="getMedByMidAndProductTime" resultMap="medicinal">
+        SELECT mid,name,productTime,counterId,counterLeft,repertoryId,repertoryLeft FROM medicinal
+        WHERE mid=#{mid} AND productTime = #{productTime}
+    </select>
+
+    <select id="getCounter" resultType="cn.xzit.entity.base.Counter">
+        SELECT * FROM counter limit #{current},#{limit}
+    </select>
+
+    <select id="getCounterCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM counter
+    </select>
+
+    <select id="getCounterByPosition" resultType="cn.xzit.entity.base.Counter">
+        SELECT * FROM counter WHERE position = #{position}
+    </select>
+
+    <select id="getCounterByPid" resultType="cn.xzit.entity.base.Counter">
+        SELECT * FROM counter WHERE cid = #{cid}
+    </select>
+
+    <select id="getDrawMed" resultMap="drawMed">
+        SELECT mid,name,counterId,counterLeft,repertoryId,repertoryLeft,productTime FROM medicinal WHERE isSoldOut = 1 and counterLeft>0
+    </select>
+
+    <select id="getDrawMedCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM medicinal WHERE isSoldOut = 1 and counterLeft>0
+    </select>
+
+    <select id="getNeedDrawPrescript" resultMap="Prescript">
+        SELECT * FROM prescript WHERE isCharge = 1 AND isShell = 0 AND isCancel = 0 AND (SELECT TIMESTAMPDIFF(DAY,charge_time,#{time})) >7 union all
+        SELECT * FROM prescript WHERE isCharge = 0 AND isCancel = 0 AND (SELECT TIMESTAMPDIFF(DAY,create_time,#{time})) >1 limit #{current},#{limit}
+    </select>
+
+    <select id="getNeedDrawPrescriptCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM (SELECT * FROM prescript WHERE isCharge = 1 AND isShell = 0 AND isCancel = 0 AND (SELECT TIMESTAMPDIFF(DAY,charge_time,#{time})) >7 union all
+        SELECT * FROM prescript WHERE isCharge = 0 AND isCancel = 0 AND (SELECT TIMESTAMPDIFF(DAY,create_time,#{time})) >1)a
+    </select>
+
+    <select id="getLowNumMedicinal" resultMap="medicinal">
+        select mid,name,productTime,if(a.counterId=null or a.counterId='','',(select position from counter where counter.cid=a.counterId)) as counterId,counterLeft,
+        if(a.repertoryId=null or a.repertoryId='','',(select position from repertory where repertory.rid=a.repertoryId)) as repertoryId,repertoryLeft
+        from (select mid,name,productTime,counterId,counterLeft,repertoryId,repertoryLeft from medicinal where counterLeft &lt; 20 and isSoldOut = 0)a limit #{current},#{limit}
+    </select>
+
+    <select id="getLowNumMedicinalCount" resultType="java.lang.Integer">
+        select count(1) from (select mid,name,productTime,counterId,counterLeft,repertoryId,repertoryLeft from medicinal where counterLeft &lt; 20 and isSoldOut = 0)a
+    </select>
+
+    <select id="getCanUseCounter" resultMap="counter">
+        SELECT * FROM counter where isUse = 0
+    </select>
+
+    <select id="getCounterIdByName" resultType="java.lang.String">
+        SELECT cid FROM counter where position = #{name}
+    </select>
+
+    <select id="getCounterPositionById" resultType="java.lang.String">
+        SELECT position FROM counter where cid = #{id}
+    </select>
+
+    <select id="getReperstoryPositionById" resultType="java.lang.String">
+        SELECT position FROM repertory where rid = #{id}
+    </select>
+
+    <select id="getIsSoldOut" resultType="java.lang.String">
+        SELECT isSoldOut FROM medicinal WHERE mid = #{mid} and productTime = #{productTime}
+    </select>
+
+
+</mapper>

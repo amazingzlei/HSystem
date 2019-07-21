@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 名称空间（接口的全类名）
+-->
+<mapper namespace="cn.xzit.dao.PurchaseDao">
+
+    <resultMap id="purchase" type="cn.xzit.entity.base.Purchase">
+        <result column="pid" property="pid"></result>
+        <result column="isPut" property="isPut"></result>
+        <result column="isAccess" property="isAccess"></result>
+        <result column="accessor" property="assessor"></result>
+        <result column="accessorName" property="assessorName"></result>
+        <result column="applicant" property="applicant"></result>
+        <result column="applicantName" property="applicantName"></result>
+        <result column="status" property="status"></result>
+        <result column="createTime" property="createTime"></result>
+    </resultMap>
+
+    <resultMap id="purchaseInfo" type="cn.xzit.entity.base.PurchaseInfo">
+        <result column="pid" property="pid"></result>
+        <result column="mid" property="mid"></result>
+        <result column="mnum" property="mnum"></result>
+        <result column="wid" property="wid"></result>
+        <result column="isPut" property="isPut"></result>
+        <result column="newMedName" property="newMedName"></result>
+    </resultMap>
+
+    <resultMap id="medicial" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="function" property="function"></result>
+        <result column="shellPrice" property="shellPrice"></result>
+        <result column="bidPrice" property="bidPrice"></result>
+        <result column="saveTime" property="saveTime"></result>
+    </resultMap>
+
+    <resultMap id="drawMed" type="cn.xzit.entity.base.Medicinal">
+        <result column="mid" property="mid"></result>
+        <result column="name" property="name"></result>
+        <result column="counterId" property="counterId"></result>
+        <result column="counterLeft" property="counterLeft"></result>
+        <result column="repertoryId" property="repertoryId"></result>
+        <result column="repertoryLeft" property="repertoryLeft"></result>
+        <result column="productTime" property="productTime"></result>
+    </resultMap>
+
+    <resultMap id="purchaseExport" type="cn.xzit.entity.execl.PurchaseExport">
+        <result column="mid" property="mid"></result>
+        <result column="newMedName" property="newMedName"></result>
+        <result column="mnum" property="mnum"></result>
+    </resultMap>
+
+    <select id="getPurchase" resultMap="purchase">
+        SELECT a.pid,a.isPut,a.isAccess,a.accessor,a.applicant,a.status,a.createTime,
+        (SELECT name FROM employee where wid=a.accessor)as accessorName,(SELECT name FROM employee where wid=a.applicant)as applicantName FROM (
+        SELECT pid,CASE isPut WHEN 1 THEN "已入库" ELSE "未入库" END as isPut,CASE isAccess WHEN 0 THEN "未审核" ELSE "已审核" END as isAccess,
+        accessor,applicant,CASE status WHEN 0 THEN '待审核'  WHEN 1 THEN '已审核'
+        ELSE '已采购' END as status,createTime FROM purchase WHERE isAccess=1 ORDER BY createTime DESC )a limit #{current},#{limit}
+    </select>
+
+    <select id="getPurchaseCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM (SELECT a.pid,a.isPut,a.isAccess,a.accessor,a.applicant,a.status,a.createTime,
+        (SELECT name FROM employee where wid=a.accessor)as accessorName,(SELECT name FROM employee where wid=a.applicant)as applicantName FROM (
+        SELECT pid,CASE isPut WHEN 1 THEN "已入库" ELSE "未入库" END as isPut,CASE isAccess WHEN 0 THEN "未审核" ELSE "已审核" END as isAccess,
+        accessor,applicant,CASE status WHEN 0 THEN '待审核'  WHEN 1 THEN '已审核'
+        ELSE '已采购' END as status,createTime FROM purchase WHERE isAccess=1)a)b
+    </select>
+
+    <select id="getPurchaseInfo" resultMap="purchaseInfo">
+         SELECT a.pid,a.mid,a.wid,if(a.newMedName!=null or a.newMedName!="",a.newMedName,
+         (SELECT DISTINCT name FROM medicinal WHERE mid=a.mid)) as newMedName,a.mnum,a.isPut FROM
+         (SELECT pid,mid,wid,newMedName,mnum,isPut FROM purchaseinfo where pid=#{pid})a limit #{current},#{limit}
+    </select>
+
+    <select id="getPurchaseInfoCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM
+         (SELECT pid,mid,wid,newMedName,mnum,isPut FROM purchaseinfo where pid=#{pid})a
+    </select>
+
+    <select id="getPurchaseExportInfo" resultMap="purchaseExport">
+     SELECT a.mid,if(a.newMedName!=null or a.newMedName!="",a.newMedName,
+         (SELECT DISTINCT name FROM medicinal WHERE mid=a.mid)) as newMedName,a.mnum FROM
+         (SELECT pid,mid,wid,newMedName,mnum,isPut FROM purchaseinfo where pid=#{pid})a
+    </select>
+
+    <select id="getDetailMed" resultMap="medicial">
+        SELECT mid, name,function,shellPrice,bidPrice,saveTime FROM medicinal WHERE mid = #{mid} GROUP BY mid
+    </select>
+
+    <select id="getReperstory" resultType="cn.xzit.entity.base.Repertory">
+        SELECT * FROM repertory limit #{current},#{limit}
+    </select>
+
+    <select id="getReperstoryCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM repertory
+    </select>
+
+    <select id="getRepertoryByPosition" resultType="cn.xzit.entity.base.Repertory">
+        SELECT * FROM repertory WHERE position = #{position}
+    </select>
+
+    <select id="getRepertoryByPid" resultType="cn.xzit.entity.base.Repertory">
+        SELECT * FROM repertory WHERE rid = #{pid}
+    </select>
+
+    <select id="getAllCanUseRepertory" resultType="cn.xzit.entity.base.Repertory">
+        SELECT * FROM repertory WHERE isUse = 0
+    </select>
+
+    <select id="getMedByIdAndProductTime" resultMap="medicial">
+        SELECT mid,name,function,shellPrice,bidPrice FROM medicinal WHERE mid = #{mid} AND productTime = #{productTime}
+    </select>
+
+    <select id="getCountOfIsNotPut" resultType="java.lang.Integer">
+        SELECT count(1) FROM purchaseinfo WHERE pid=#{pid} and isPut=0
+    </select>
+
+    <select id="getDrawMed" resultMap="drawMed">
+        SELECT mid,name,counterId,counterLeft,repertoryId,repertoryLeft,productTime FROM medicinal WHERE isSoldOut = 1 and repertoryLeft>0
+    </select>
+
+    <select id="getDrawMedCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM medicinal WHERE isSoldOut = 1 and repertoryLeft>0
+    </select>
+
+
+</mapper>

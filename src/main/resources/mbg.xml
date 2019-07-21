@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+
+    <context id="DB2Tables" targetRuntime="MyBatis3">
+        <!--连接哪个数据库-->
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/zenglei?allowMultiQueries=true"
+                        userId="root"
+                        password="123456">
+        </jdbcConnection>
+
+        <!--实体类生成策略-->
+        <javaModelGenerator targetPackage="cn.xzit.entity.base" targetProject=".\src\main\java\">
+        </javaModelGenerator>
+        <!--sql映射文件生成策略-->
+        <sqlMapGenerator targetPackage="mappers"  targetProject=".\src\main\resources\">
+            <property name="enableSubPackages" value="false" />
+        </sqlMapGenerator>
+        <!--dao接口生成策略-->
+        <javaClientGenerator type="XMLMAPPER" targetPackage="cn.xzit.dao"  targetProject=".\src\main\java\">
+            <property name="enableSubPackages" value="false" />
+        </javaClientGenerator>
+        <!--解析哪张表-->
+        <table tableName="appointment" domainObjectName="Appointment" ></table>
+        <table tableName="case" domainObjectName="Case" ></table>
+        <table tableName="department" domainObjectName="Department" ></table>
+        <table tableName="doctor" domainObjectName="Doctor" ></table>
+        <table tableName="level" domainObjectName="Level" ></table>
+        <table tableName="medicine" domainObjectName="Medicine" ></table>
+        <table tableName="patient" domainObjectName="Patient" ></table>
+        <table tableName="prescription" domainObjectName="Prescription" ></table>
+        <table tableName="registration" domainObjectName="Registration" ></table>
+        <table tableName="worker" domainObjectName="Worker" ></table>
+    </context>
+</generatorConfiguration>
